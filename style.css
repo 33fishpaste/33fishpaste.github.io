@@ -1,0 +1,108 @@
+:root{
+  --sidebar-width:260px;
+  --bg-main:#121212;
+  --bg-side:#212121;
+  --fg:#fafafa;
+  --accent:#4caf50;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;font-family:system-ui,sans-serif;
+  display:flex;min-height:100vh;
+  background:var(--bg-main);color:var(--fg);
+  overflow-x:hidden;
+}
+
+/*================ Hamburger ==================*/
+#hamburger{
+  display:block;
+  position:fixed;top:1rem;left:1rem;
+  width:2.25rem;height:2.25rem;
+  font-size:1.8rem;line-height:2.1rem;text-align:center;
+  background:#333;border:none;border-radius:.4rem;
+  color:var(--fg);cursor:pointer;z-index:1100;
+}
+#hamburger:active{background:#444;}
+
+/*================ Sidebar ====================*/
+#sidebar{
+  position:fixed;
+  top:0;left:0;height:100vh;
+  width:var(--sidebar-width);
+  padding-top:3.5rem;                 /* ハンバーガー分の余白 */
+  background:var(--bg-side);
+  overflow-y:auto;z-index:900;
+  transition:transform .3s ease;
+  transform:translateX(0);            /* PC は開いた状態 */
+}
+#sidebar.hidden{transform:translateX(-100%);}  /* 共通の閉状態 */
+
+/* モバイル幅ではデフォルトを閉じる */
+@media(max-width:767px){
+  #sidebar{transform:translateX(-100%);}
+  body.menu-open #sidebar{transform:translateX(0);}
+}
+
+/* サイドバー表示時、デスクトップはメインを押し出す */
+@media(min-width:768px){
+  body.menu-open main{margin-left:var(--sidebar-width);}
+}
+
+/*================ Main =======================*/
+main{flex:1 1 auto;padding:3.5rem 1.5rem 2rem;overflow-y:auto;}
+
+/* controls */
+#controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1rem;}
+#controls input[type="text"]{flex:1 1 220px;min-width:140px;}
+
+/* checklist / tables */
+table{width:100%;border-collapse:collapse;margin-bottom:1rem;}
+th,td{padding:.5rem .75rem;border-bottom:1px solid #333;vertical-align:top;}
+th{text-align:left;background:#1e1e1e;}
+input[type="checkbox"]{accent-color:var(--accent);transform:scale(1.2);}
+select,input[type="text"],textarea{background:#1e1e1e;border:1px solid #444;color:var(--fg);padding:.25rem .5rem;border-radius:4px;}
+textarea{resize:vertical;width:100%;}
+
+/* desc under checklist */
+.desc-row td{font-size:.85rem;color:#bbb;white-space:pre-line;border-bottom:none;}
+
+/* icon buttons */
+.icon-btn{background:none;border:none;color:var(--fg);font-size:1.25rem;cursor:pointer;}
+.icon-btn:hover{color:var(--accent);}
+
+/*================ Build Cards ===============*/
+.build-grid{display:block;}
+.build-card{width:100%;background:#1e1e1e;padding:1rem;border-radius:.75rem;box-shadow:0 2px 6px rgb(0 0 0 /.6);margin-bottom:1rem;position:relative;}
+
+.build-header{font-size:1.1rem;margin-bottom:.5rem;word-break:break-all;}
+.build-line{display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;margin:.25rem 0;}
+.build-line .desc{flex-basis:100%;margin-left:2rem;font-size:.8rem;color:#bbb;white-space:pre-line;}
+
+.note{margin-top:.5rem;font-size:.85rem;white-space:pre-line;}
+.btn-row{position:absolute;top:.5rem;right:.5rem;display:flex;gap:.25rem;}
+.btn-row button{background:none;border:none;color:#fafafa;font-size:1.1rem;cursor:pointer;}
+.btn-row button:hover{color:var(--accent);}
+
+.view.hidden,.edit.hidden{display:none;}
+.form-row{display:flex;gap:.5rem;margin:.25rem 0;}
+.form-row label{min-width:70px;}
+.form-row input{flex:1;}
+
+#add-build{width:100%;margin-top:1rem;padding:.65rem 1rem;border:none;border-radius:.6rem;background:var(--accent);color:#000;font-weight:bold;cursor:pointer;}
+#add-build:hover{opacity:.9;}
+
+/* ===== メニュー項目の見やすさ調整 ===== */
+.menu-item{
+  padding:1rem 1.25rem;
+  cursor:pointer;
+  user-select:none;
+  font-size:1rem;      /* ← 追加：常に 16 px 相当 */
+}
+
+.dmg-icon{
+  width:1.1em;
+  height:1.1em;
+  vertical-align:-0.15em;  /* 文字と高さを合わせる微調整 */
+}
