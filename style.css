@@ -50,23 +50,43 @@ body {
    Layout: Hamburger Button & Sidebar
    ================================================= */
 #hamburger {
+  /* 右上 & 透明背景 (アイコンはSVG側で描画) */
   position: fixed;
   top: 1rem;
-  left: 1rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  font-size: 1.8rem;
-  line-height: 2.1rem;
-  text-align: center;
-  background: var(--color-bg-darker);
+  right: 1rem;      /* ← left を right に変更 */
+  width: 48px;
+  height: 48px;
+  padding: 0;
   border: none;
-  border-radius: var(--radius-s);
-  color: var(--color-fg);
+  background: transparent;
   cursor: pointer;
   z-index: var(--z-hamburger);
 }
-#hamburger:active {
-  background: #444;
+
+/* ── SVG アニメーション ─────────────────── */
+#hamburger .hamburger-morph__line {
+  fill: none;
+  stroke: #fff;                 /* ← 白色指定 */
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray .6s cubic-bezier(.4,0,.2,1),
+              stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+}
+#hamburger .hamburger-morph__line:nth-child(1){ stroke-dasharray:60 207; }
+#hamburger .hamburger-morph__line:nth-child(2){ stroke-dasharray:60 60;  }
+#hamburger .hamburger-morph__line:nth-child(3){ stroke-dasharray:60 207; }
+
+#hamburger.active .hamburger-morph__line:nth-child(1) {
+  stroke-dasharray: 90 207;
+  stroke-dashoffset: -134;
+}
+#hamburger.active .hamburger-morph__line:nth-child(2) {
+  stroke-dasharray: 1 60;
+  stroke-dashoffset: -30;
+}
+#hamburger.active .hamburger-morph__line:nth-child(3) {
+  stroke-dasharray: 90 207;
+  stroke-dashoffset: -134;
 }
 
 /* Sidebar */
@@ -75,8 +95,9 @@ body {
   inset: 0 auto 0 0;
   width: var(--sidebar-width);
   padding-top: calc(3.5rem + 0.25rem); /* hamburger height + gap */
-  background: var(--color-bg-side);
-  overflow-y: auto;
+  background: rgba(33, 33, 33, .10);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); /* Safari */  overflow-y: auto;
   z-index: var(--z-sidebar);
   transition: transform .3s ease;
   transform: translateX(0); /* open (desktop default) */
@@ -91,6 +112,8 @@ body {
   body.menu-open #sidebar { transform: translateX(0); }
 }
 @media (min-width: 768px) {
+  /* 本体 (main) も滑らかにスライドさせる */
+  main { transition: margin-left .3s ease; }
   body.menu-open main { margin-left: var(--sidebar-width); }
 }
 

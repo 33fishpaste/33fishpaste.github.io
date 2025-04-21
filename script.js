@@ -21,8 +21,20 @@ const withIcons = (txt="") =>
   txt.replace(/<([^>]+)>/g, (_,tag)=>ICON_SRC[tag]?`<img class="dmg-icon" src="data:image/png;base64,${ICON_SRC[tag]}" alt="${tag}">`:"");
 
 /***** ハンバーガー開閉 *****/
-function closeMenu(){g.sidebar.classList.add("hidden");document.body.classList.remove("menu-open");}
-document.getElementById("hamburger").addEventListener("click",()=>{g.sidebar.classList.toggle("hidden");document.body.classList.toggle("menu-open");});
+const hamburgerBtn = document.getElementById("hamburger");
+
+function closeMenu () {
+  g.sidebar.classList.add("hidden");
+  document.body.classList.remove("menu-open");
+  hamburgerBtn.classList.remove("active");     // ← アイコン状態リセット
+}
+
+hamburgerBtn.addEventListener("click", () => {
+  g.sidebar.classList.toggle("hidden");
+  document.body.classList.toggle("menu-open");
+  hamburgerBtn.classList.toggle("active");     // ← アニメーション切替
+});
+
 window.addEventListener("DOMContentLoaded",()=>innerWidth>=768?document.body.classList.add("menu-open"):closeMenu());
 
 /***** Local‑storage helpers *****/
@@ -431,7 +443,8 @@ function renderMenu(data){
       else if(m.type==="wish")renderWishlist();
       else if(m.type==="storage")renderStorageIO();
       else renderTable(m);
-      closeMenu();
+      /* スマホのみ自動で閉じる。PC は開いたまま */
+      if (innerWidth < 768) closeMenu();
     };
     g.sidebar.appendChild(div);
   });
