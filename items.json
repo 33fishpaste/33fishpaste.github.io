@@ -8,22 +8,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -197,22 +201,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -290,22 +298,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -2335,22 +2347,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -3852,22 +3868,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -5161,22 +5181,26 @@
         {
           "key": "name",
           "label": "武器名",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "subClass",
           "label": "サブクラス",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "shotMode",
           "label": "射撃モード",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -5304,28 +5328,32 @@
     },
     {
       "id": "mods",
-      "title": "Mods",
+      "title": "Mod",
       "type": "mod",
       "columns": [
         {
           "key": "name",
           "label": "Mod",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "rarity",
           "label": "レアリティ",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "compatName",
           "label": "対象",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
@@ -16699,22 +16727,26 @@
         {
           "key": "name",
           "label": "アルケイン",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "true"
         },
         {
           "key": "rarity",
           "label": "レアリティ",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "type",
           "label": "分類",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         },
         {
           "key": "compatName",
           "label": "対象",
-          "type": "text"
+          "type": "text",
+          "mobileDefault": "false"
         }
       ],
       "items": [
