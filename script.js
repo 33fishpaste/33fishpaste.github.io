@@ -101,7 +101,7 @@ function renderTable(menu){
   });
 
   /* ---- Rebuild ---- */
-  const MAX_ANIM_ROWS = 50;           // ← animate 上限
+  const ANIM_LIMIT = 30;              // ← スライドさせる上限行数
   const rebuild = (animate = false)=>{
     const showDetails = isPC || g.main.querySelector("#showDetails")?.checked;
     const cols = isPC ? menu.columns
@@ -187,11 +187,12 @@ function renderTable(menu){
         tr.appendChild(td);
       });
       frag.appendChild(tr);
-      if (animate) {                         // ★ 条件付きで付与
+      /* ---- slide‑in animation (先頭 ANIM_LIMIT 行のみ) ---- */
+      if (animate && seq < ANIM_LIMIT) {
         tr.classList.add("slide-row");
         tr.style.animationDelay = `${seq * 10}ms`;
-        seq++;
       }
+      seq++;
 
       /* ---- extra rows for hidden columns (mobile only) ---- */
       if(showExtraRows){
@@ -204,11 +205,11 @@ function renderTable(menu){
           const er = document.createElement("tr"); er.className = "extra-row";
           er.innerHTML = `<td></td><td colspan="${cols.length}"><table class="mini">${rows}</table></td>`;
           frag.appendChild(er);
-          if (animate) {
+          if (animate && seq < ANIM_LIMIT) {
             er.classList.add("slide-row");
             er.style.animationDelay = `${seq * 10}ms`;
-            seq++;
           }
+          seq++;
         }
       }
 
@@ -221,11 +222,11 @@ function renderTable(menu){
         dtd.innerHTML = withIcons(item.desc);
         dr.appendChild(dtd);
         frag.appendChild(dr);
-        if (animate) {
+        if (animate && seq < ANIM_LIMIT) {
           dr.classList.add("slide-row");
           dr.style.animationDelay = `${seq * 10}ms`;
-          seq++;
         }
+        seq++;
       }
     });
 
