@@ -293,59 +293,173 @@ function renderTodo(){
 }
 
 /*================== 3. WISH LIST ==================*/
-const WISH_KEY="wishlist:list";
-function renderWishlist(){
-  g.main.innerHTML="<h2>Wish List</h2>";
-  const table=document.createElement("table");
-  table.innerHTML="<thead><tr><th></th><th>アイテム</th><th>数</th><th>備考</th><th></th><th></th></tr></thead>";
-  const tbody=document.createElement("tbody");table.appendChild(tbody);g.main.appendChild(table);
+const WISH_KEY = "wishlist:list";
 
-  const rebuild=()=>{
-    tbody.innerHTML="";
-    const list=lsGet(WISH_KEY,"wish",[]);
-    list.forEach(w=>{
-      const tr=document.createElement("tr");
-      const cb=Object.assign(document.createElement("input"),{type:"checkbox",checked:w.checked,onchange:e=>{w.checked=e.target.checked;lsSet(WISH_KEY,"wish",list);}});
+function renderWishlist () {
+  g.main.innerHTML = "<h2>Wish List</h2>";
+
+  /* ---------- table skeleton ---------- */
+  const table = document.createElement("table");
+  table.innerHTML =
+    `<thead>
+       <tr>
+         <th></th><th>アイテム</th><th>進捗</th><th>備考</th><th></th><th></th>
+       </tr>
+     </thead>`;
+  const tbody = document.createElement("tbody");
+  table.appendChild(tbody);
+  g.main.appendChild(table);
+
+  /* ---------- helper ---------- */
+  const saveList = list => lsSet(WISH_KEY, "wish", list);
+
+  /* ---------- main builder ---------- */
+  const rebuild = () => {
+    tbody.innerHTML = "";
+    const list = lsGet(WISH_KEY, "wish", []).map(w => ({
+      ...w,
+      /* 旧 qty → max 移行（後方互換） */
+      max: w.max ?? w.qty ?? 0,
+      have: w.have ?? 0
+    }));
+
+    list.forEach(w => {
+      const tr = document.createElement("tr");
+
+      /* ✔ checkbox */
+      const cb = Object.assign(document.createElement("input"), {
+        type: "checkbox",
+        checked: w.checked,
+        onchange: e => {
+          w.checked = e.target.checked;
+          saveList(list);
+        }
+      });
       tr.appendChild(document.createElement("td")).appendChild(cb);
 
-      const itemTd=tr.appendChild(document.createElement("td"));itemTd.textContent=w.item||"";
-      const numTd =tr.appendChild(document.createElement("td"));numTd.textContent=w.qty||"";
-      const noteTd=tr.appendChild(document.createElement("td"));noteTd.textContent=w.note||"";
+      /* item name */
+      tr.appendChild(document.createElement("td")).textContent = w.item || "";
 
-      /* edit */
-      const editBtn=document.createElement("button");editBtn.className="icon-btn";editBtn.innerHTML="✏";
-      editBtn.onclick=()=>{
-        const itmInp=document.createElement("input");itmInp.type="text";itmInp.value=w.item;itmInp.setAttribute("list","suggest");
-        const qtyInp=document.createElement("input");qtyInp.type="text";qtyInp.value=w.qty;
-        const noteInp=document.createElement("input");noteInp.type="text";noteInp.value=w.note;
-        const save=()=>{w.item=itmInp.value.trim();w.qty=qtyInp.value.trim();w.note=noteInp.value.trim();lsSet(WISH_KEY,"wish",list);rebuild();};
-        [itmInp,qtyInp,noteInp].forEach(inp=>inp.onblur=save);
-        itemTd.replaceChildren(itmInp);qtyInp.style.width="4em";numTd.replaceChildren(qtyInp);noteTd.replaceChildren(noteInp);
-        itmInp.focus();
+      /* progress – slider + buttons */
+      const progTd = document.createElement("td");
+      const minus = Object.assign(document.createElement("button"), { className: "icon-btn", textContent: "－" });
+      const plus  = Object.assign(document.createElement("button"), { className: "icon-btn", textContent: "＋" });
+      const range = Object.assign(document.createElement("input"), { type: "range", className: "wish-range",
+        min: 0, max: w.max || 0, value: w.have });
+      const label = document.createElement("span");
+
+      const sync = () => {
+        range.max = w.max || 0;
+        range.value = w.have;
+        label.textContent = `${w.have}/${w.max}`;
       };
-      tr.appendChild(document.createElement("td")).appendChild(editBtn);
+      minus.onclick = () => { if (w.have > 0) { w.have--; sync(); saveList(list);} };
+      plus.onclick  = () => { if (w.have < w.max) { w.have++; sync(); saveList(list);} };
+      range.oninput = e => { w.have = parseInt(e.target.value); label.textContent = `${w.have}/${w.max}`; };
+      range.onchange= () => saveList(list);
 
-      const delBtn=Object.assign(document.createElement("button"),{className:"icon-btn",innerHTML:"✖",onclick(){lsSet(WISH_KEY,"wish",list.filter(x=>x.id!==w.id));rebuild();}});
+      progTd.append(minus, range, plus, label);
+      sync();
+      tr.appendChild(progTd);
+
+      /* note */
+      tr.appendChild(document.createElement("td")).textContent = w.note || "";
+
+      /* edit / delete */
+      const editBtn = Object.assign(document.createElement("button"), { className: "icon-btn", innerHTML: "✏" });
+      const delBtn  = Object.assign(document.createElement("button"), { className: "icon-btn", innerHTML: "✖",
+        onclick () { saveList(list.filter(x => x.id !== w.id)); rebuild(); } });
+
+      editBtn.onclick = () => {
+        /* replace 3 cells with inputs ( item | have/max | note ) */
+        const itmInp  = Object.assign(document.createElement("input"), {
+          type: "text", value: w.item
+        });
+        itmInp.setAttribute("list", "suggest");    /* ← ここも同様 */
+        const haveInp = Object.assign(document.createElement("input"), { type: "number", value: w.have, min: 0, style: "width:4em" });
+        const maxInp  = Object.assign(document.createElement("input"), { type: "number", value: w.max, min: 0, style: "width:4em" });
+        const noteInp = Object.assign(document.createElement("input"), { type: "text", value: w.note });
+
+        tr.children[1].replaceChildren(itmInp);                // item
+        tr.children[2].replaceChildren(haveInp, document.createTextNode(" / "), maxInp); // have/max
+        tr.children[3].replaceChildren(noteInp);               // note
+
+        /* ── 保存ロジック ────────────────────────── */
+        const commit = () => {
+          /* 値を書き戻し & 保存 */
+          w.item = itmInp.value.trim();
+          w.have = parseInt(haveInp.value) || 0;
+          w.max  = parseInt(maxInp.value)  || 0;
+          w.note = noteInp.value.trim();
+          saveList(list);
+          rebuild();                      /* 表示モードへ戻す */
+        };
+
+        /* 同じ行の別 input にフォーカスが移る場合は commit しない */
+        let blurTimer = null;
+        const onBlur = () => {
+          clearTimeout(blurTimer);
+          blurTimer = setTimeout(() => {
+            /* 0 ms 後に activeElement が更新されるので判定 */
+            if (tr.contains(document.activeElement)) return; // まだ同じ行
+            commit();                                        // 行外に出たら確定
+          }, 0);
+        };
+
+        /* ４つの入力すべてに blur / Enter key ハンドラを付与 */
+        [itmInp, haveInp, maxInp, noteInp].forEach(inp => {
+          inp.addEventListener("blur", onBlur);
+          inp.addEventListener("keydown", e => { if (e.key === "Enter") commit(); });
+        });
+
+        itmInp.focus();  /* 最初のフォーカスはアイテム名へ */
+      };
+
+      tr.appendChild(document.createElement("td")).appendChild(editBtn);
       tr.appendChild(document.createElement("td")).appendChild(delBtn);
       tbody.appendChild(tr);
     });
 
-    /* add row */
-    const addTr=document.createElement("tr");addTr.innerHTML="<td></td>";
-    const itmTd=addTr.appendChild(document.createElement("td"));
-    const itmInp=Object.assign(document.createElement("input"),{type:"text",placeholder:"アイテム名"});itmInp.setAttribute("list","suggest");itmTd.appendChild(itmInp);
-    const qtyTd=addTr.appendChild(document.createElement("td"));
-    const qtyInp=Object.assign(document.createElement("input"),{type:"text",placeholder:"1",style:"width:4em"});qtyTd.appendChild(qtyInp);
-    const noteTd=addTr.appendChild(document.createElement("td"));
-    const noteInp=Object.assign(document.createElement("input"),{type:"text",placeholder:"備考"});noteTd.appendChild(noteInp);
+    /* ------- add row (bottom) ------- */
+    const addTr = document.createElement("tr");
+    addTr.innerHTML = "<td></td>";
 
-    const addBtn=Object.assign(document.createElement("button"),{className:"icon-btn",innerHTML:"＋",onclick(){
-      const item=itmInp.value.trim();if(!item)return;
-      list.push({id:Date.now().toString(36),item,qty:qtyInp.value.trim(),note:noteInp.value.trim(),checked:false});
-      lsSet(WISH_KEY,"wish",list);rebuild();
-    }});
+    /* item */
+    const itmTd = addTr.appendChild(document.createElement("td"));
+    const itmInp = Object.assign(document.createElement("input"), {
+      type: "text", placeholder: "アイテム名"
+    });
+    itmInp.setAttribute("list", "suggest");        /* ← 属性で指定 */
+    itmTd.appendChild(itmInp);
+
+    /* have / max */
+    const progTd = addTr.appendChild(document.createElement("td"));
+    const haveInp = Object.assign(document.createElement("input"), { type: "number", placeholder: "0", style: "width:4em" });
+    const maxInp  = Object.assign(document.createElement("input"), { type: "number", placeholder: "1", style: "width:4em" });
+    progTd.append(haveInp, document.createTextNode(" / "), maxInp);
+
+    /* note */
+    const noteTd = addTr.appendChild(document.createElement("td"));
+    const noteInp = Object.assign(document.createElement("input"), { type: "text", placeholder: "備考" });
+    noteTd.appendChild(noteInp);
+
+    /* add button */
+    const addBtn = Object.assign(document.createElement("button"), { className: "icon-btn", innerHTML: "＋",
+      onclick () {
+        if (!itmInp.value.trim()) return;
+        list.push({
+          id: Date.now().toString(36),
+          item: itmInp.value.trim(),
+          have: parseInt(haveInp.value) || 0,
+          max:  parseInt(maxInp.value)  || 0,
+          note: noteInp.value.trim(),
+          checked: false
+        });
+        saveList(list); rebuild();
+      }});
     addTr.appendChild(document.createElement("td")).appendChild(addBtn);
-    addTr.appendChild(document.createElement("td"));tbody.appendChild(addTr);
+    addTr.appendChild(document.createElement("td"));   /* dummy */
+    tbody.appendChild(addTr);
   };
   rebuild();
 }

@@ -458,3 +458,46 @@ body.menu-open #backdrop{
 @media (min-width:768px){
   #backdrop{display:none;}         /* PC では常に非表示 */
 }
+
+/* Wish‑list slider */
+.wish-range{
+  /* ===== design tokens (カスタマイズ可) ===== */
+  --c: #ffffff; /* アクティブ色をテーマ色に合わせる */
+  --g: 3px;   /* 右側グレー領域のギャップ */
+  --l: 3px;   /* 進捗ラインの太さ */
+  --s: 10px;  /* 親指サイズ */
+
+  width: 160px;            /* スライダー横幅。お好みで */
+  height: var(--s);        /* Firefox 用に高さ必須 */
+
+  /* ---- 内部計算用 ---- */
+  --_c: color-mix(in srgb, var(--c), #000 var(--p,0%));
+
+  -webkit-appearance: none;
+  -moz-appearance:    none;
+  appearance:         none;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+  vertical-align: middle;
+  margin: 0 .5rem;
+}
+
+/* ── hover / focus ───────────────────────────── */
+.wish-range:focus-visible,
+.wish-range:hover{ --p: 25%; }           /* 濃さを 25% UP */
+.wish-range:active,
+.wish-range:focus-visible{ --_b: var(--s); }  /* thumb 内側を塗りつぶし */
+
+/* ── Chromium系 Thumb ───────────────────────── */
+.wish-range::-webkit-slider-thumb{
+  height: var(--s);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 0 var(--_b,var(--l)) inset var(--_c);
+  border-image: linear-gradient(90deg,var(--_c) 50%,#898989 0)
+                0 1/calc(50% - var(--l)/2) 100vw/0 calc(100vw + var(--g));
+  -webkit-appearance: none;
+  appearance: none;
+  transition: .3s;
+}
