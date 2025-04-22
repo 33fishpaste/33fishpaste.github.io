@@ -448,7 +448,7 @@ function renderStorageIO(){
     <textarea id="import-area" rows="6" style="width:100%;" placeholder="ここに JSON を貼り付け"></textarea><br>
     <button id="btn-import">読み込み</button>
   </section>
-  <section><h3>削除</h3><button id="btn-clear" style="background:#d33;color:#fff;">Warframe Tracker データを全削除</button></section>`;
+  <section><h3>削除</h3><button id="btn-clear" style="background:#d33;color:#fff;">Warframe Item Tracker データを全削除</button></section>`;
 
   g.main.querySelector("#btn-export").onclick=()=>{
     const data={};Object.keys(localStorage).filter(k=>k.startsWith("wf:")).forEach(k=>data[k]=localStorage.getItem(k));
