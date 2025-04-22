@@ -14,6 +14,22 @@ const g = {
   flat:    []      // flattened items for suggestion / desc lookup
 };
 
+/* renderMenu の前にグローバル定義しておく */
+const MENU_ORDER = ["all","kuva","tenet","coda","primary","secondary","melee","archgun","archmelee","sentinelweapon","mods","arcanes"];
+
+
+/* ==== utility: simple debounce =================================== */
+const debounce = (fn, delay = 200) => {
+  let id;
+  return (...args) => {
+    clearTimeout(id);
+    id = setTimeout(() => fn.apply(this, args), delay);
+  };
+};
+
+/* Backdrop (mobile) */
+const backdrop = document.getElementById("backdrop");
+
 /***** ダメージタイプ → Base64 アイコン (icon_src.jsで定義)*****
 
 /* --- タグ → <img> に変換（未登録タグは非表示） --- */
@@ -28,6 +44,9 @@ function closeMenu () {
   document.body.classList.remove("menu-open");
   hamburgerBtn.classList.remove("active");     // ← アイコン状態リセット
 }
+
+/* モバイル: 背景タップで閉じる */
+backdrop.addEventListener("click", closeMenu);
 
 hamburgerBtn.addEventListener("click", () => {
   g.sidebar.classList.toggle("hidden");
@@ -82,7 +101,8 @@ function renderTable(menu){
   });
 
   /* ---- Rebuild ---- */
-  const rebuild = ()=>{
+  const MAX_ANIM_ROWS = 50;           // ← animate 上限
+  const rebuild = (animate = false)=>{
     const showDetails = isPC || g.main.querySelector("#showDetails")?.checked;
     const cols = isPC ? menu.columns
                       : menu.columns.filter(c=>c.mobileDefault);
@@ -96,6 +116,8 @@ function renderTable(menu){
           showU = g.main.querySelector("#showUnchecked").checked;
 
     tbody.innerHTML = "";
+    const frag = document.createDocumentFragment();  // 追加
+    let seq = 0;
     menu.items.forEach(item=>{
       const checked = lsGet(item.id);
       if((checked&&!showC)||(!checked&&!showU)) return;
@@ -164,7 +186,12 @@ function renderTable(menu){
         }
         tr.appendChild(td);
       });
-      tbody.appendChild(tr);
+      frag.appendChild(tr);
+      if (animate) {                         // ★ 条件付きで付与
+        tr.classList.add("slide-row");
+        tr.style.animationDelay = `${seq * 10}ms`;
+        seq++;
+      }
 
       /* ---- extra rows for hidden columns (mobile only) ---- */
       if(showExtraRows){
@@ -176,7 +203,12 @@ function renderTable(menu){
           }).join("");
           const er = document.createElement("tr"); er.className = "extra-row";
           er.innerHTML = `<td></td><td colspan="${cols.length}"><table class="mini">${rows}</table></td>`;
-          tbody.appendChild(er);
+          frag.appendChild(er);
+          if (animate) {
+            er.classList.add("slide-row");
+            er.style.animationDelay = `${seq * 10}ms`;
+            seq++;
+          }
         }
       }
 
@@ -188,17 +220,31 @@ function renderTable(menu){
         dtd.colSpan = cols.length;
         dtd.innerHTML = withIcons(item.desc);
         dr.appendChild(dtd);
-        tbody.appendChild(dr);
+        frag.appendChild(dr);
+        if (animate) {
+          dr.classList.add("slide-row");
+          dr.style.animationDelay = `${seq * 10}ms`;
+          seq++;
+        }
       }
     });
+
+    /* ---- まとめて挿入（リフロー1回） ---- */
+    tbody.appendChild(frag);
   };
 
-  /* ---- Events ---- */
-  ["search","showChecked","showUnchecked"]
-    .forEach(id=>g.main.querySelector(`#${id}`).addEventListener("input",rebuild));
-  if(!isPC) g.main.querySelector("#showDetails").addEventListener("input",rebuild);
+  /* ---- Events (検索欄は debounce で負荷軽減) ---- */
+  g.main.querySelector("#search")
+        .addEventListener("input", debounce(() => rebuild(false), 250));
+  ["showChecked","showUnchecked"]
+    .forEach(id=>g.main.querySelector(`#${id}`).addEventListener("input",()=>rebuild(false)));
 
-  rebuild();
+  if(!isPC){
+    /* スマホ: 詳細表示トグルはアニメ有り */
+    g.main.querySelector("#showDetails").addEventListener("input",()=>rebuild(true));
+  }
+
+  rebuild(true);
 }
 
 /*================== 2. TODO LIST ==================*/
@@ -423,12 +469,49 @@ function renderStorageIO(){
 
 /*================== 6. MENU + bootstrap ==================*/
 function renderMenu(data){
-  g.data=data;g.flat=[];data.menus.forEach(m=>m.items?.forEach(it=>g.flat.push(it)));
+  /* --- MENU_ORDER に従い並べ替え ------------------------- */
+  data.menus.sort((a, b) => {
+    const ai = MENU_ORDER.indexOf(a.id);
+    const bi = MENU_ORDER.indexOf(b.id);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  /* === 0) 全横断検索メニューを生成 ======================== */
+  /* 除外したいメニュー id をここで列挙 */
+  const EXCLUDE_IDS = ["kuva","tenet","coda"];
+
+  const globalMenu = {
+    id:   "search_all",
+    title:"Warframe Item Tracker",
+    columns:[
+      {key:"name",     label:"名前",   type:"text", mobileDefault:true},
+      {key:"category", label:"カテゴリ", type:"text", mobileDefault:true}
+    ],
+    items:[]
+  };
+  /* 既存メニューを走査して items をコピーし category を付与（除外 ID を無視） */
+  data.menus
+      .filter(m => !EXCLUDE_IDS.includes(m.id))
+      .forEach(m=>{
+        m.items?.forEach(it=>{
+          globalMenu.items.push({...it, category:m.title});
+        });
+      });
+
+  /* 名前順にソート（item.name が無い場合は label / id を fallback） */
+  globalMenu.items.sort((a,b)=>
+    (a.name || a.label || a.id).localeCompare(b.name || b.label || b.id, "ja")
+  );
+
+  g.data = data;
+  g.flat = [];
+  data.menus.forEach(m => m.items?.forEach(it => g.flat.push(it)));
   if(!g.dl){g.dl=document.createElement("datalist");g.dl.id="suggest";document.body.appendChild(g.dl);}g.dl.innerHTML="";
   g.flat.forEach(it=>{const o=document.createElement("option");o.value=it.label||it.name||it.id;g.dl.appendChild(o);});
 
   g.sidebar.innerHTML="";
-  const menuDefs=[...data.menus,
+  /* globalMenu を先頭に挿入 ------------------------------- */
+  const menuDefs=[globalMenu, ...data.menus,
     {id:"builds",title:"Builds",type:"builds"},
     {id:"todo",title:"TODO",type:"todo"},
     {id:"wish",title:"Wish List",type:"wish"},          // ★ 追加
@@ -448,12 +531,13 @@ function renderMenu(data){
     };
     g.sidebar.appendChild(div);
   });
-  renderTable(data.menus[0]);
+  /* 最初に全横断検索を表示（= menuDefs[0]） */
+  renderTable(menuDefs[0]);
 }
 
 /***** 起動 *****/
 fetch("items.json").then(r=>r.json()).then(data => {
-    /* --- mobileDefault を文字列 → Boolean に変換 --- */
+    /* --- 0) mobileDefault を文字列 → Boolean に変換 --- */
     data.menus?.forEach(menu => {
       menu.columns?.forEach(col => {
         if (typeof col.mobileDefault === "string") {
@@ -461,6 +545,19 @@ fetch("items.json").then(r=>r.json()).then(data => {
         }
       });
     });
+
+    /* --- 1) 既存アイテムを辞書化しておく ---------------- */
+    const dict = {};
+    data.menus.forEach(m =>
+        m.items?.forEach(it => { if (it && typeof it === "object") dict[it.id] = it; })
+    );
+    /* --- 2) items 配列に文字列(id)があれば差し替える ---- */
+    data.menus.forEach(m => {
+      if (Array.isArray(m.items)) {
+          m.items = m.items.map(it => typeof it === "string" ? { ...dict[it] } : it);
+      }
+    });
+
     renderMenu(data);           // ← ここで初めて描画へ
   })
   .catch(()=>g.main.textContent="items.json の読み込みに失敗しました。");

@@ -27,6 +27,7 @@
   --z-hamburger: 1100;
   --z-tooltip: 1200;
   --z-sidebar: 900;
+  --z-backdrop: 850;          /* ← 追加 */
 }
 
 /* =================================================
@@ -96,7 +97,7 @@ body {
   width: var(--sidebar-width);
   padding-top: calc(3.5rem + 0.25rem); /* hamburger height + gap */
   background: rgba(33, 33, 33, .10);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(8px); /* Safari */  overflow-y: auto;
   z-index: var(--z-sidebar);
   transition: transform .3s ease;
@@ -418,3 +419,42 @@ tr.rarity-common    { color: var(--rarity-common); }
 tr.rarity-uncommon  { color: var(--rarity-uncommon); }
 tr.rarity-rare      { color: var(--rarity-rare); }
 tr.rarity-legendary { color: var(--rarity-legendary); }
+
+/*──────────────────────────────
+  Row slide‑in animation
+  ──────────────────────────────*/
+@keyframes slide-in-from-left {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: translateX(0);      opacity: 1; }
+}
+.slide-row {
+  opacity: 0;                     /* 初期は非表示 */
+  animation: slide-in-from-left 0.5s ease forwards;
+}
+
+/*──────────────────────────────
+  Backdrop (mobile) – fade both ways
+  ──────────────────────────────*/
+#backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  opacity: 0;
+  visibility: hidden;             /* ← 最終的に非表示 */
+  transition:
+    opacity   .3s ease,
+    visibility 0s linear .3s;     /* ← 0.3s 後に切替 */
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(2px); /* Safari */
+  z-index: var(--z-backdrop);
+  pointer-events: none;
+}
+body.menu-open #backdrop{
+  opacity: 1;
+  visibility: visible;            /* すぐ表示 */
+  transition: opacity .3s ease;   /* visibility は即時 */
+  pointer-events: auto;
+}
+@media (min-width:768px){
+  #backdrop{display:none;}         /* PC では常に非表示 */
+}

@@ -5327,6 +5327,195 @@
       ]
     },
     {
+      "id": "coda",
+      "title": "Coda",
+      "type": "coda",
+      "columns": [
+        {
+          "key": "name",
+          "label": "武器名",
+          "type": "text",
+          "mobileDefault": "true"
+        },
+        {
+          "key": "type",
+          "label": "分類",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "subClass",
+          "label": "サブクラス",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "shotMode",
+          "label": "射撃モード",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "bonus",
+          "label": "ボーナス",
+          "type": "select",
+          "options": [
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+          ],
+          "mobileDefault": "true"
+        }
+      ],
+      "items": [
+        "Coda_Hema",
+        "Coda_Sporothrix",
+        "Coda_Synapse",
+        "Coda_Bassocyst",
+        "Coda_Catabolyst",
+        "Coda_Pox",
+        "Coda_Tysis",
+        "Dual_Coda_Torxica",
+        "Coda_Caustacyst",
+        "Coda_Hirudo",
+        "Coda_Mire",
+        "Coda_Pathocyst",
+        "Coda_Motovore"
+      ]
+    },
+    {
+      "id": "kuva",
+      "title": "Kuva",
+      "type": "kuva",
+      "columns": [
+        {
+          "key": "name",
+          "label": "武器名",
+          "type": "text",
+          "mobileDefault": "true"
+        },
+        {
+          "key": "type",
+          "label": "分類",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "subClass",
+          "label": "サブクラス",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "shotMode",
+          "label": "射撃モード",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "bonus",
+          "label": "ボーナス",
+          "type": "select",
+          "options": [
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+          ],
+          "mobileDefault": "true"
+        }
+      ],
+      "items": [
+        "Kuva_Bramma",
+        "Kuva_Chakkhurr",
+        "Kuva_Drakgoon",
+        "Kuva_Hek",
+        "Kuva_Hind",
+        "Kuva_Karak",
+        "Kuva_Kohm",
+        "Kuva_Ogris",
+        "Kuva_Quartakk",
+        "Kuva_Sobek",
+        "Kuva_Tonkor",
+        "Kuva_Zarr",
+        "Kuva_Brakk",
+        "Kuva_Kraken",
+        "Kuva_Nukor",
+        "Kuva_Seer",
+        "Kuva_Twin_Stubbas",
+        "Kuva_Shildeg",
+        "Kuva_Ayanga",
+        "Kuva_Grattler"
+      ]
+    },
+    {
+      "id": "tenet",
+      "title": "Tenet",
+      "type": "tenet",
+      "columns": [
+        {
+          "key": "name",
+          "label": "武器名",
+          "type": "text",
+          "mobileDefault": "true"
+        },
+        {
+          "key": "type",
+          "label": "分類",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "subClass",
+          "label": "サブクラス",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "shotMode",
+          "label": "射撃モード",
+          "type": "text",
+          "mobileDefault": "false"
+        },
+        {
+          "key": "bonus",
+          "label": "ボーナス",
+          "type": "select",
+          "options": [
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+          ],
+          "mobileDefault": "true"
+        }
+      ],
+      "items": [
+        "Tenet_Arca_Plasmor",
+        "Tenet_Envoy",
+        "Tenet_Ferrox",
+        "Tenet_Flux_Rifle",
+        "Tenet_Glaxion",
+        "Tenet_Tetra",
+        "Tenet_Cycron",
+        "Tenet_Detron",
+        "Tenet_Diplos",
+        "Tenet_Plinx",
+        "Tenet_Spirex",
+        "Tenet_Agendus",
+        "Tenet_Exec",
+        "Tenet_Grigori",
+        "Tenet_Livia"
+      ]
+    },
+    {
       "id": "mods",
       "title": "Mod",
       "type": "mod",
