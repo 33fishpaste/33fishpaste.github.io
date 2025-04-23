@@ -244,11 +244,10 @@ textarea {
 
 /* Action buttons within card */
 .btn-row {
-  position: absolute;
-  top: .5rem;
-  right: .5rem;
   display: flex;
   gap: .25rem;
+  justify-content: flex-end; /* 右寄せ */
+  margin-bottom: .4rem;      /* タイトルとの間隔 */
 }
 .btn-row button {
   background: none;
@@ -282,6 +281,25 @@ textarea {
   cursor: pointer;
 }
 #add-build:hover { opacity: .9; }
+
+/* ===== Build 用ボタン (#paste-build) ==================== */
+#paste-build{
+  width: 100%;
+  margin-top: .5rem;
+  padding: .65rem 1rem;
+  border: none;
+  border-radius: var(--radius-m);
+  background: #03a9f4;          /* ← New Build と同デザイン・色だけ変更 */
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+#paste-build:hover{opacity:.9}
+
+/* ===== Build-card 詳細表示トグル ======================== */
+.build-card .desc{display:none;}         /* デフォルト非表示 */
+.build-card.show-details .desc{display:block;}
+
 
 /* =================================================
    Menu Items & Icons

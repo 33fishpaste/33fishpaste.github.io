@@ -14,6 +14,38 @@ const g = {
   flat:    []      // flattened items for suggestion / desc lookup
 };
 
+/* ==== Kuva / Tenet / Coda ==== */
+const VARIANT_ELEMENTS = {
+  kuva : ["+60% 火炎", "+60% 冷気", "+60% 電気", "+60% 毒",
+          "+60% 放射線", "+60% 磁気", "+60% 衝撃"],
+  tenet: ["+60% 火炎", "+60% 冷気", "+60% 電気", "+60% 毒",
+          "+60% 放射線", "+60% 磁気", "+60% 衝撃"],
+  tenet: ["+60% 火炎", "+60% 冷気", "+60% 電気", "+60% 毒",
+          "+60% 放射線", "+60% 磁気", "+60% 衝撃"]
+};
+
+/* ==== カテゴリ別スロット構成 =====================================
+   mods  : 通常スロット数
+   aura  : オーラ   (1/0)
+   stance: スタンス (1/0)
+   exi   : エクシラス(1/0)
+   arc   : アルケイン数
+==================================================================*/
+const SLOT_CFG = {
+  "Warframe":              {mods: 8, aura:1, stance:0, exi:1, arc:2},
+  "プライマリ":            {mods: 8, aura:0, stance:0, exi:1, arc:1},
+  "セカンダリ":            {mods: 8, aura:0, stance:0, exi:1, arc:1},
+  "近接":                  {mods: 8, aura:0, stance:1, exi:1, arc:1},
+  "センチネル用武器":      {mods: 9, aura:0, stance:0, exi:0, arc:0},
+  "アークウイングガン":    {mods: 9, aura:0, stance:0, exi:0, arc:0},
+  "アークウイング近接":    {mods: 8, aura:0, stance:0, exi:0, arc:0},
+  "センチネル":            {mods: 9, aura:0, stance:0, exi:0, arc:0},
+  "モア/ハウンド/クブロウ/キャバット": {mods:10,aura:0,stance:0,exi:0,arc:0},
+  "アークウイング":        {mods: 8, aura:0, stance:0, exi:0, arc:0},
+  "ネクロメカ":            {mods:12, aura:0, stance:0, exi:0, arc:0}
+};
+
+
 /* renderMenu の前にグローバル定義しておく */
 const MENU_ORDER = ["all","kuva","tenet","coda","primary","secondary","melee","archgun","archmelee","sentinelweapon","mods","arcanes"];
 
@@ -25,6 +57,27 @@ const debounce = (fn, delay = 200) => {
     clearTimeout(id);
     id = setTimeout(() => fn.apply(this, args), delay);
   };
+};
+
+/* ==== shared Tooltip (Checklist / Build 共用) ===================== */
+let _tooltip;
+const getTip = () => {
+  if (_tooltip) return _tooltip;
+  _tooltip = Object.assign(document.createElement("div"), { id: "tooltip" });
+  document.body.appendChild(_tooltip);
+  document.addEventListener("click", e=>{
+    if (!e.target.closest(".tooltip-trigger")) _tooltip.classList.remove("visible");
+  });
+  return _tooltip;
+};
+const showTip = (html, target) => {
+  const tip = getTip();
+  tip.innerHTML = html;
+  const r = target.getBoundingClientRect();
+  const y = r.bottom + (window.scrollY||document.documentElement.scrollTop) + 8;
+  tip.style.left = `${Math.max(8, r.left)}px`;
+  tip.style.top  = `${y}px`;
+  tip.classList.add("visible");
 };
 
 /* Backdrop (mobile) */
@@ -468,8 +521,28 @@ function renderWishlist () {
 const BUILD_KEY="builds:list";
 function renderBuilds(){
   const builds=lsGet(BUILD_KEY,"build",[]);
-  g.main.innerHTML="<h2>Builds</h2>";
+  const blank = {id:Date.now().toString(36),category:"Warframe",item:"",name:"",
+                  element:"",arcanes:["",""],aura:"",exilus:"",
+                  mods:Array(12).fill(""),note:""};
+                  g.main.innerHTML=`
+                    <h2>Builds</h2>
+                    <div id="build-controls">
+                      <input type="text" id="build-search"
+                             placeholder="検索 …"
+                             style="width:100%;max-width:320px;margin:0 0 1rem;">
+                    </div>`;
+
+                  /* --- 検索フィルタ ------------------------------------ */
+                  const filterCards = q=>{
+                    q=q.trim().toLowerCase();
+                    grid.querySelectorAll(".build-card").forEach(c=>{
+                      c.style.display = (q==="" || c.dataset.search.includes(q))?"":"none";
+    });
+  };
   const grid=document.createElement("div");grid.className="build-grid";g.main.appendChild(grid);
+
+  g.main.querySelector("#build-search")
+  .addEventListener("input", e=>filterCards(e.target.value));
 
   const slotCfg=t=>{
     switch(t){
@@ -482,55 +555,161 @@ function renderBuilds(){
   const addCard=obj=>{
     const cfg=slotCfg(obj.type);
     const card=document.createElement("div");card.className="build-card";grid.appendChild(card);
+    card.dataset.search = `${obj.category} ${obj.item} ${obj.name}`.toLowerCase();
 
-    /* view */
-    const view=document.createElement("div");view.className="view";card.appendChild(view);
-    view.appendChild(Object.assign(document.createElement("div"),{className:"build-header",textContent:`${obj.type} – ${obj.item||"(no item)"} / ${obj.name||"Unnamed"}`}));
+    /* buttons (先に挿入して“1 段目”に) */
+    const btnRow = Object.assign(document.createElement("div"),{className:"btn-row"});
+    card.appendChild(btnRow);           /* ← ここが『1 行目』になる */
 
-    const line=(label,val)=>{
-      if(!val)return;
-      const li=document.createElement("div");li.className="build-line";
-      const id=val.replace(/\s+/g,"_");
-      const have=lsGet(id);
-      const cb=Object.assign(document.createElement("input"),{type:"checkbox",checked:have,onchange:e=>{
-        lsSet(id,"checked",e.target.checked);
-        document.querySelectorAll(`input[data-id="${id}"]`).forEach(el=>el.checked=e.target.checked);
-      }});
-      cb.dataset.id=id;li.appendChild(cb);
-      li.appendChild(Object.assign(document.createElement("span"),{innerHTML:`${label}: ${withIcons(val)}`}));
-      const itm=g.flat.find(x=>x.label===val||x.name===val);
-      if(itm&&itm.desc){const d=document.createElement("div");d.className="desc";d.innerHTML=withIcons(itm.desc);li.appendChild(d);}
+    /* view (タイトル＋詳細) */
+    const headerLine =
+      `${obj.category} – ${obj.item || "(no item)"}${obj.element ? ` (${obj.element})` : ""} / ${obj.name || "Unnamed"}`;
+    const view = document.createElement("div"); view.className = "view";
+    view.appendChild(Object.assign(document.createElement("div"),{
+      className: "build-header",
+      textContent: headerLine
+    }));
+    card.appendChild(view);             /* ← 『2 行目』以降 */
+
+    const line = (label, val) => {
+      if (!val) return;
+
+      /* ---- 行の骨格 ---- */
+      const li = document.createElement("div");
+      li.className = "build-line";
+
+      /* ✔チェックボックス */
+      const id  = val.replace(/\s+/g, "_");
+      const cb  = Object.assign(document.createElement("input"), {
+                    type: "checkbox",
+                    checked: lsGet(id),
+                    onchange: e => {
+                      lsSet(id, "checked", e.target.checked);
+                      document.querySelectorAll(`input[data-id="${id}"]`)
+                               .forEach(el => (el.checked = e.target.checked));
+                    }
+                  });
+      cb.dataset.id = id;
+      li.appendChild(cb);
+
+      /* ラベルテキスト */
+      const span = Object.assign(document.createElement("span"), {
+        innerHTML: `${label}: ${withIcons(val)}`
+      });
+      li.appendChild(span);
+
+      /* ---- desc 生成 ---- */
+      const itm = g.flat.find(x => x.label === val || x.name === val);
+      if (itm && itm.desc) {
+        /* ① .desc ブロックは常に作成（CSS で開閉） */
+        const d = document.createElement("div");
+        d.className = "desc";
+        d.innerHTML = withIcons(itm.desc);
+        li.appendChild(d);
+
+        /* ② 詳細 OFF の時だけツールチップ */
+        if (!card.classList.contains("show-details")) {
+          span.className = "tooltip-trigger";
+          span.onclick = e => {
+            e.stopPropagation();
+            showTip(`<div class="desc">${withIcons(itm.desc)}</div>`, span);
+          };
+        }
+      }
+      /* view へ追加 */
       view.appendChild(li);
     };
-    obj.arcanes.forEach((a,i)=>line(`Arcane${i+1}`,a));
+
+    const cfgView = SLOT_CFG[obj.category] || SLOT_CFG["Warframe"];
+    obj.arcanes.slice(0,cfgView.arc).forEach((a,i)=>line(`Arcane${i+1}`,a));
     if(cfg.aura)line("Aura",obj.aura);
     if(cfg.stance)line("Stance",obj.aura);
     if(cfg.exi)line("Exilus",obj.exilus);
+
     obj.mods.forEach((m,i)=>line(`Mod${i+1}`,m));
     if(obj.note){const p=document.createElement("p");p.className="note";p.innerHTML=withIcons(obj.note);view.appendChild(p);}
 
-    /* buttons & edit */
-    const btnRow=document.createElement("div");btnRow.className="btn-row";card.appendChild(btnRow);
+    /* ① 詳細表示トグルを追加（編集✏の左） */
+    const detailChk = Object.assign(document.createElement("input"),
+                                      {type:"checkbox",title:"詳細表示"});
+    detailChk.onchange = () =>
+        card.classList.toggle("show-details", detailChk.checked);
+    btnRow.appendChild(detailChk);          /* ← まず配置 */
+
     const editBtn=document.createElement("button");editBtn.textContent="✏";
-    const delBtn=document.createElement("button");delBtn.textContent="✖";btnRow.append(editBtn,delBtn);
+    const delBtn=document.createElement("button");delBtn.textContent="✖";
+    btnRow.append(editBtn,delBtn);
 
     const edit=document.createElement("div");edit.className="edit hidden";card.appendChild(edit);
-    const typeSel=document.createElement("select");["Warframe","プライマリ","セカンダリ","近接"].forEach(t=>typeSel.add(new Option(t,t,false,t===obj.type)));
+    const catLabel = document.createElement("span");       // ← ★ 表示専用
+    catLabel.textContent = obj.category || "(未定)";
     const itemInp=document.createElement("input");itemInp.type="text";itemInp.value=obj.item;itemInp.setAttribute("list","suggest");
     const nameInp=Object.assign(document.createElement("input"),{type:"text",value:obj.name});
     edit.appendChild(Object.assign(document.createElement("h4"),{textContent:"タイトル"}));
-    edit.append("分類:",typeSel," アイテム名:",itemInp," ビルド名:",nameInp);
+    /* 変異武器用の属性行を動的生成 --------------------- */
+    const attrWrap = document.createElement("span");      // placeholder
+    const buildAttrRow = ()=>{
+      attrWrap.innerHTML="";              // 毎回クリア
+      const itm = g.flat.find(x=>x.label===itemInp.value||x.name===itemInp.value);
+      if(itm?.variant && VARIANT_ELEMENTS[itm.variant]){
+        const sel = document.createElement("select");
+        VARIANT_ELEMENTS[itm.variant].forEach(elm=>{
+          sel.add(new Option(elm,elm,false,elm===obj.element));
+        });
+        sel.onchange = e => obj.element = e.target.value;
+        attrWrap.append(" 属性:", sel);
+      }else{
+        obj.element="";                   // 非変異武器なら空
+      }
+    };
+    buildAttrRow();
+    const updateCategory = () => {
+      const itm = g.flat.find(x=>x.label===itemInp.value || x.name===itemInp.value);
+      if (itm?.category){
+        obj.category       = itm.category;
+        obj.type           = itm.category;
+        catLabel.textContent = itm.category;
+      }else{
+        obj.category       = "(未定)";
+        catLabel.textContent = "(未定)";
+      }
+      buildSlots();      // ← スロットも作り直し
+      buildAttrRow();    // ← 属性プルダウンも更新
+    };
+    itemInp.addEventListener("input", updateCategory);
+
+    edit.append("カテゴリ:",catLabel," アイテム名:",itemInp,attrWrap," ビルド名:",nameInp);
 
     const inpRow=(lbl,val)=>{
       const d=document.createElement("div");d.className="form-row";
       d.appendChild(Object.assign(document.createElement("label"),{textContent:lbl}));
-      const i=document.createElement("input");i.type="text";i.value=val;i.setAttribute("list","suggest");d.appendChild(i);edit.appendChild(d);return i;
+      const i=document.createElement("input");i.type="text";i.value=val;i.setAttribute("list","suggest");d.appendChild(i);slotBox.appendChild(d);return i;
+    };
+    /* ---- Slots (カテゴリが変わる度に再構築) ---- */
+    const slotBox = document.createElement("div");  // ここに挿入
+    const buildSlots = () => {
+      slotBox.innerHTML = "";                       // クリア
+      const cfg = SLOT_CFG[obj.category] || SLOT_CFG["Warframe"];
+
+      const arc = [];
+      for (let i=0;i<cfg.arc;i++) arc.push(inpRow(`Arcane${i+1}`, obj.arcanes[i]||""));
+
+      let auraInp=null, stanceInp=null;
+      if (cfg.aura)  auraInp  = inpRow("Aura",   obj.aura);
+      if (cfg.stance)stanceInp= inpRow("Stance", obj.aura); // ※Auraと共有プロパティ
+
+      let exiInp=null;
+      if (cfg.exi) exiInp = inpRow("Exilus", obj.exilus);
+
+      const mods=[];
+      for (let i=0;i<cfg.mods;i++) mods.push(inpRow(`Mod${i+1}`, obj.mods[i]||""));
+
+      /* 保存時に参照できるよう obj.* をクロージャーへ保持 */
+      slotBox._refs = {arc, auraInp, stanceInp, exiInp, mods};
     };
     edit.appendChild(Object.assign(document.createElement("h4"),{textContent:"Slots"}));
-    const arc=[];for(let i=0;i<cfg.arc;i++)arc.push(inpRow(`Arcane${i+1}`,obj.arcanes[i]||""));
-    let auraInp=null;if(cfg.aura||cfg.stance)auraInp=inpRow(cfg.stance?"Stance":"Aura",obj.aura);
-    let exiInp=null;if(cfg.exi)exiInp=inpRow("Exilus",obj.exilus);
-    const mods=[];for(let i=0;i<8;i++)mods.push(inpRow(`Mod${i+1}`,obj.mods[i]||""));
+    edit.appendChild(slotBox);
+    buildSlots();
 
     edit.appendChild(Object.assign(document.createElement("h4"),{textContent:"Note"}));
     const noteArea=Object.assign(document.createElement("textarea"),{value:obj.note,rows:3});edit.appendChild(noteArea);
@@ -541,16 +720,115 @@ function renderBuilds(){
     cancel.onclick=()=>{edit.classList.add("hidden");view.classList.remove("hidden");};
     delBtn.onclick=()=>{if(confirm("Delete build?")){lsSet(BUILD_KEY,"build",builds.filter(b=>b.id!==obj.id));card.remove();}};
     save.onclick=()=>{
-      obj.type=typeSel.value;obj.item=itemInp.value.trim();obj.name=nameInp.value.trim();
-      obj.arcanes=arc.map(i=>i.value.trim());obj.aura=auraInp?auraInp.value.trim():"";obj.exilus=exiInp?exiInp.value.trim():"";obj.mods=mods.map(i=>i.value.trim());obj.note=noteArea.value;
+      obj.type = obj.category;           // ← ★カテゴリをそのまま保存
+      obj.item = itemInp.value.trim();
+      obj.name = nameInp.value.trim();
+      const elmSel = attrWrap.querySelector("select");
+      if (elmSel) obj.element = elmSel.value.trim();
+      const {arc, auraInp, stanceInp, exiInp, mods} = slotBox._refs;
+      obj.arcanes = arc.map(i=>i.value.trim());
+      obj.aura    = auraInp ? auraInp.value.trim()
+                 : stanceInp? stanceInp.value.trim() : "";
+      obj.exilus  = exiInp ? exiInp.value.trim() : "";
+      obj.mods    = mods.map(i=>i.value.trim());
+      obj.note    = noteArea.value;
       const arr=lsGet(BUILD_KEY,"build",[]);const idx=arr.findIndex(b=>b.id===obj.id);idx===-1?arr.push(obj):arr[idx]=obj;lsSet(BUILD_KEY,"build",arr);
       card.remove();addCard(obj);
     };
   };
-  builds.forEach(b=>addCard({...{id:Date.now().toString(36),type:"Warframe",item:"",name:"",arcanes:["",""],aura:"",exilus:"",mods:Array(8).fill(""),note:""},...b}));
+　 builds.forEach(b=>addCard({...{id:Date.now().toString(36),type:"Warframe",item:"",name:"",element:"",arcanes:["",""],aura:"",exilus:"",mods:Array(8).fill(""),note:""},...b}));
   const newBtn=document.createElement("button");newBtn.id="add-build";newBtn.textContent="＋ New Build";
   newBtn.onclick=()=>addCard({id:Date.now().toString(36),type:"Warframe",item:"",name:"",arcanes:["",""],aura:"",exilus:"",mods:Array(8).fill(""),note:""});
   g.main.appendChild(newBtn);
+
+  /* ======== 📋 クリップボード JSON 取り込み ======== */
+  /* 1) Overframe/自作 JSON → 内部フォーマットへ変換 ---- */
+  /* -------------------------------------------------------------
+     クリップボード JSON → 内部ビルド形式へ変換
+     - アイテム名を大小文字無視で g.flat から検索し、正式表記へ補正
+     - mods / arcanes の並び順を反転
+     - Exilus 2 個目以降 → Mod 配列末尾へ結合
+  ----------------------------------------------------------------*/
+  const convertClipBuild = src => {
+    /* --- 0) ベースオブジェクト -------------------------------- */
+    const b = {
+      id:       Date.now().toString(36),
+      item:     src.item     ?? "",
+      name:     src.name     ?? "",
+      element:  src.element  ?? "",
+      arcanes:  [],
+      aura:     src.aura     ?? "",
+      exilus:   "",
+      mods:     [],
+      note:     (src.note ?? "").replace(/\\n/g, "\n"),
+      category: "Warframe",            // 後で上書き
+      type:     "Warframe"
+    };
+
+    /* --- 1) mods / arcanes を反転 ----------------------------- */
+    const srcMods = Array.isArray(src.mods)    ? [...src.mods].reverse()    : [];
+    const srcArcs = Array.isArray(src.arcanes) ? [...src.arcanes].reverse() : [];
+
+    /* --- 2) Exilus 処理 -------------------------------------- */
+    if (Array.isArray(src.exilus) && src.exilus.length) {
+      b.exilus = src.exilus[0];
+      b.mods   = [...srcMods, ...src.exilus.slice(1)];
+    } else {
+      b.exilus = typeof src.exilus === "string" ? src.exilus : "";
+      b.mods   = srcMods;
+    }
+    b.arcanes = srcArcs;
+
+    /* --- 3) 近接 Stance → Aura フォールバック --------------- */
+    if (src.stance && !b.aura) b.aura = src.stance;
+
+    /* --- 4) アイテム辞書照合（大文字小文字を無視） ------------ */
+    const norm = s => (s ?? "").toLowerCase();
+    const target = norm(b.item);
+    const itm = g.flat.find(x => norm(x.label) === target || norm(x.name) === target);
+
+    if (itm) {
+      /* 4-A) 正式な表記へ置き換え */
+      b.item = itm.name ?? itm.label ?? itm.id;
+
+      /* 4-B) カテゴリ & type を補完 */
+      if (itm.category) {
+        b.category = itm.category;
+        b.type     = itm.category;
+      }
+    }
+
+    return b;
+  };
+
+
+
+  /* 2) ボタン設置 & ハンドラ ----------------------- */
+  const pasteBtn = document.createElement("button");
+  pasteBtn.id = "paste-build";
+  pasteBtn.textContent = "📋 Paste JSON Build";
+  pasteBtn.onclick = async () => {
+    let txt = "";
+    try {
+      txt = (await navigator.clipboard.readText()).trim();
+    } catch {
+      alert("クリップボードの読み取りに失敗しました。ブラウザ設定をご確認ください。");
+      return;
+    }
+    if (!txt) { alert("クリップボードにテキストがありません。"); return; }
+
+    let raw;
+    try { raw = JSON.parse(txt); }
+    catch { alert("JSON の解析に失敗しました。"); return; }
+
+    const arr = Array.isArray(raw) ? raw : [raw];
+    const list = lsGet(BUILD_KEY, "build", []);
+    arr.forEach(r => list.push(convertClipBuild(r)));
+    lsSet(BUILD_KEY, "build", list);
+    renderBuilds();                /* 画面を再描画 */
+  };
+
+  g.main.appendChild(pasteBtn);
 }
 
 /*================== 5. STORAGE I/O ==================*/
@@ -619,8 +897,39 @@ function renderMenu(data){
   );
 
   g.data = data;
-  g.flat = [];
-  data.menus.forEach(m => m.items?.forEach(it => g.flat.push(it)));
+  /* ---- ①  g.flat を (id) でユニーク化しつつ category / variant を補完 ---- */
+  const map = new Map();                         // id → item
+
+  data.menus.forEach(menu => menu.items?.forEach(src => {
+    const id   = src.id;
+    const item = { ...src };                     // 浅クローン
+
+    /* a) category をまだ持っていなければメニュータイトルで補完
+          Kuva/Tenet/Coda メニューは除外           */
+    if (!item.category && !EXCLUDE_IDS.includes(menu.id)) {
+      item.category = menu.title;
+    }
+
+    /* b) ユニーク化 & マージ                         */
+    if (!map.has(id)) {
+      map.set(id, item);                         // 初出
+    } else {
+      const base = map.get(id);                  // 既存を取得
+      for (const [k, v] of Object.entries(item)) {
+        if (v == null || v === "") continue;     // 空値は無視
+        if (base[k] == null || base[k] === "") { // 未セットなら採用
+          base[k] = v;
+        }
+      }
+      /* category だけは「Kuva 等ではない値」を優先 */
+      if (EXCLUDE_IDS.includes(base.category ?? "") && !EXCLUDE_IDS.includes(item.category ?? "")) {
+        base.category = item.category;
+      }
+    }
+  }));
+
+  g.flat = Array.from(map.values());
+
   if(!g.dl){g.dl=document.createElement("datalist");g.dl.id="suggest";document.body.appendChild(g.dl);}g.dl.innerHTML="";
   g.flat.forEach(it=>{const o=document.createElement("option");o.value=it.label||it.name||it.id;g.dl.appendChild(o);});
 
@@ -670,6 +979,15 @@ fetch("items.json").then(r=>r.json()).then(data => {
     data.menus.forEach(m => {
       if (Array.isArray(m.items)) {
           m.items = m.items.map(it => typeof it === "string" ? { ...dict[it] } : it);
+      }
+    });
+
+    /* --- 3) Kuva / Tenet / Coda フラグ付与 ------------- */
+    data.menus.forEach(m=>{
+      if(["kuva","tenet","coda"].includes(m.id)){
+        m.items?.forEach(it=>{
+          it.variant  = m.id;            // Kuva/Tenet/Coda 判定
+        });
       }
     });
 
