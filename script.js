@@ -840,6 +840,11 @@ function renderStorageIO(){
     <textarea id="import-area" rows="6" style="width:100%;" placeholder="ここに JSON を貼り付け"></textarea><br>
     <button id="btn-import">読み込み</button>
   </section>
+<section><h3>チェック状況インポート</h3>
+  <textarea id="import-checked" rows="6" style="width:100%;"
+            placeholder="Kuva Bramma\nKuva Hek\nSampotes …"></textarea><br>
+  <button id="btn-import-checked">チェック済みにする</button>
+</section>
   <section><h3>削除</h3><button id="btn-clear" style="background:#d33;color:#fff;">Warframe Item Tracker データを全削除</button></section>`;
 
   g.main.querySelector("#btn-export").onclick=()=>{
@@ -854,6 +859,34 @@ function renderStorageIO(){
       alert("読み込みました。再読込してください");
     }catch{alert("JSON 解析失敗");}
   };
+  /* ===== 追加: チェック状況インポート ===== */
+    g.main.querySelector("#btn-import-checked").onclick = () => {
+      const txt = g.main.querySelector("#import-checked").value.trim();
+      if (!txt) { alert("入力が空です"); return; }
+
+      const lines = txt.split(/\r?\n/)
+                       .map(s => s.trim())
+                       .filter(Boolean);
+      const norm = s => s.toLowerCase();
+      let hit = 0, miss = [];
+
+      lines.forEach(name => {
+        const itm = g.flat.find(
+          x => norm(x.name || x.label || x.id) === norm(name)
+        );
+        if (itm) {
+          localStorage.setItem(`wf:checked:${itm.id}`, "true");
+          hit++;
+        } else {
+          miss.push(name);
+        }
+      });
+
+      let msg = `${hit} 件をチェック済みにしました。`;
+      if (miss.length) msg += `\n未識別: ${miss.join(", ")}`;
+      alert(msg + "\nチェックリストを開き直すと反映されます。");
+    };
+
   g.main.querySelector("#btn-clear").onclick=()=>{if(confirm("本当に削除しますか？")){
     Object.keys(localStorage).filter(k=>k.startsWith("wf:")).forEach(k=>localStorage.removeItem(k));
     alert("削除しました。再読込してください");
