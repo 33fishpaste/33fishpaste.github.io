@@ -45,9 +45,14 @@ const SLOT_CFG = {
   "ネクロメカ":            {mods:12, aura:0, stance:0, exi:0, arc:0}
 };
 
+/* ==== Companion (センチネル／その他) 用ユーティリティ ============== */
+const getCompanionCfg = sub =>
+  (sub && sub.includes("センチネル"))
+    ? SLOT_CFG["センチネル"]
+    : SLOT_CFG["モア/ハウンド/クブロウ/キャバット"];
 
 /* renderMenu の前にグローバル定義しておく */
-const MENU_ORDER = ["all","kuva","tenet","coda","primary","secondary","melee","archgun","archmelee","sentinelweapon","mods","arcanes"];
+const MENU_ORDER = ["all","kuva","tenet","coda","warframe","primary","secondary","melee","pet","sentinelweapon","archwing","archgun","archmelee","mech","mods","arcanes"];
 
 
 /* ==== utility: simple debounce =================================== */
@@ -544,12 +549,15 @@ function renderBuilds(){
   g.main.querySelector("#build-search")
   .addEventListener("input", e=>filterCards(e.target.value));
 
-  const slotCfg=t=>{
-    switch(t){
-      case"Warframe":return{arc:2,aura:true,stance:false,exi:true};
-      case"近接":return{arc:0,aura:false,stance:true,exi:true};
-      default:return{arc:2,aura:false,stance:false,exi:true};
+  // 旧実装を置き換え
+  const slotCfg = (type, sub = "") => {
+    if (type === "Warframe")      return { arc: 2, aura: true,  stance: false, exi: true  };
+    if (type === "近接")          return { arc: 0, aura: false, stance: true,  exi: true  };
+    if (type === "コンパニオン") {          // ★ 追加
+      const c = getCompanionCfg(sub);
+      return { arc: c.arc, aura: !!c.aura, stance: !!c.stance, exi: !!c.exi };
     }
+    return { arc: 2, aura: false, stance: false, exi: true };
   };
 
   const addCard=obj=>{
@@ -620,7 +628,11 @@ function renderBuilds(){
       view.appendChild(li);
     };
 
-    const cfgView = SLOT_CFG[obj.category] || SLOT_CFG["Warframe"];
+      const rec     = g.flat.find(x => x.label === obj.item || x.name === obj.item);
+      const cfgView = (obj.category === "コンパニオン")
+                        ? getCompanionCfg(rec?.subClass || obj.subClass || "")
+                        : (SLOT_CFG[obj.category] || SLOT_CFG["Warframe"]);
+
     obj.arcanes.slice(0,cfgView.arc).forEach((a,i)=>line(`Arcane${i+1}`,a));
     if(cfg.aura)line("Aura",obj.aura);
     if(cfg.stance)line("Stance",obj.aura);
@@ -668,6 +680,7 @@ function renderBuilds(){
       if (itm?.category){
         obj.category       = itm.category;
         obj.type           = itm.category;
+        obj.subClass       = itm.subClass || "";
         catLabel.textContent = itm.category;
       }else{
         obj.category       = "(未定)";
@@ -689,8 +702,15 @@ function renderBuilds(){
     const slotBox = document.createElement("div");  // ここに挿入
     const buildSlots = () => {
       slotBox.innerHTML = "";                       // クリア
-      const cfg = SLOT_CFG[obj.category] || SLOT_CFG["Warframe"];
+      /* ----- カテゴリごとのスロット構成 ----------------------------- */
+      /* ① item から subClass を確定（既存 Build も補完できるよう毎回評価） */
+      const rec      = g.flat.find(x => x.label === obj.item || x.name === obj.item);
+      obj.subClass   = rec?.subClass || obj.subClass || "";
 
+      /* ② Companion だけ subClass で分岐 */
+      const cfg = (obj.category === "コンパニオン")
+                    ? getCompanionCfg(obj.subClass)
+                    : (SLOT_CFG[obj.category] || SLOT_CFG["Warframe"]);
       const arc = [];
       for (let i=0;i<cfg.arc;i++) arc.push(inpRow(`Arcane${i+1}`, obj.arcanes[i]||""));
 
